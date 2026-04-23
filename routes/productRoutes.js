@@ -4,11 +4,11 @@ const Product = require("../models/Product");
 const multer = require("multer");
 const path = require("path");
 
-// Multer setup (unchanged)
+// Cloudinary setup
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
 const cloudinary = require("cloudinary").v2;
 
-// ✅ Use environment variables
+// ✅ ENV CONFIG
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -25,19 +25,19 @@ const storage = new CloudinaryStorage({
 
 const upload = multer({ storage });
 
-// GET ALL PRODUCTS - now with optional filters
+/* =========================
+   GET ALL PRODUCTS
+========================= */
 router.get("/", async (req, res) => {
   try {
     const { category, subCategory } = req.query;
 
     const filter = {};
 
-    // Case-insensitive exact match for category
     if (category) {
       filter.category = { $regex: new RegExp(`^${category}$`, "i") };
     }
 
-    // Case-insensitive exact match for subCategory (only if provided)
     if (subCategory) {
       filter.subCategory = { $regex: new RegExp(`^${subCategory}$`, "i") };
     }
@@ -51,10 +51,14 @@ router.get("/", async (req, res) => {
   }
 });
 
-// UPLOAD IMAGE (unchanged)
+/* =========================
+   UPLOAD IMAGE
+========================= */
 router.post("/upload", upload.single("image"), (req, res) => {
   try {
-    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
 
     res.json({ url: req.file.path });
   } catch (err) {
@@ -63,7 +67,9 @@ router.post("/upload", upload.single("image"), (req, res) => {
   }
 });
 
-// ADD PRODUCT - now supports subCategory (optional)
+/* =========================
+   ADD PRODUCT
+========================= */
 router.post("/add", async (req, res) => {
   try {
     console.log("Incoming product:", req.body);
@@ -76,16 +82,17 @@ router.post("/add", async (req, res) => {
       description,
       image,
       stock,
-      sizes = []
+      sizes = [],
+      isPreorder = false, // ✅ FIXED
     } = req.body;
 
     if (!name || !price || !category || !image) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    const parsedSizes = sizes.map(s => ({
+    const parsedSizes = sizes.map((s) => ({
       label: s.label,
-      price: Number(s.price)
+      price: Number(s.price),
     }));
 
     const product = new Product({
@@ -96,19 +103,22 @@ router.post("/add", async (req, res) => {
       description,
       image,
       stock: Number(stock) || 0,
-      sizes: parsedSizes, // 🔥 THIS IS THE FIX
+      sizes: parsedSizes,
+      isPreorder: Boolean(isPreorder), // ✅ FIXED
     });
 
     await product.save();
 
     res.status(201).json(product);
-
   } catch (err) {
     console.error("PRODUCT SAVE ERROR:", err);
     res.status(500).json({ message: "Error adding product" });
   }
 });
-// DELETE PRODUCT (unchanged)
+
+/* =========================
+   DELETE PRODUCT
+========================= */
 router.delete("/:id", async (req, res) => {
   try {
     await Product.findByIdAndDelete(req.params.id);
@@ -119,6 +129,10 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
+/* =========================
+   GET SINGLE PRODUCT
+   (CLEANED DUPLICATE FIX)
+========================= */
 router.get("/:id", async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
@@ -129,31 +143,14 @@ router.get("/:id", async (req, res) => {
 
     res.json(product);
   } catch (err) {
-    console.error("GET PRODUCT BY ID ERROR:", err);
+    console.error("GET PRODUCT ERROR:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
 
-
-// GET SINGLE PRODUCT BY ID 🔥🔥🔥
-router.get("/:id", async (req, res) => {
-  try {
-    const product = await Product.findById(req.params.id);
-
-    if (!product) {
-      return res.status(404).json({ message: "Product not found" });
-    }
-
-    res.json(product);
-
-  } catch (err) {
-    console.error("GET SINGLE PRODUCT ERROR:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-
-// UPDATE PRODUCT ✅ (NEW - SAFE ADDITION)
+/* =========================
+   UPDATE PRODUCT
+========================= */
 router.put("/:id", async (req, res) => {
   try {
     const {
@@ -164,12 +161,13 @@ router.put("/:id", async (req, res) => {
       description,
       image,
       stock,
-      sizes = []
+      sizes = [],
+      isPreorder = false, // ✅ FIXED
     } = req.body;
 
-    const parsedSizes = sizes.map(s => ({
+    const parsedSizes = sizes.map((s) => ({
       label: s.label,
-      price: Number(s.price)
+      price: Number(s.price),
     }));
 
     const updatedProduct = await Product.findByIdAndUpdate(
@@ -183,8 +181,9 @@ router.put("/:id", async (req, res) => {
         image,
         stock: Number(stock) || 0,
         sizes: parsedSizes,
+        isPreorder: Boolean(isPreorder), // ✅ FIXED
       },
-      { new: true } // return updated doc
+      { new: true }
     );
 
     if (!updatedProduct) {
@@ -192,12 +191,10 @@ router.put("/:id", async (req, res) => {
     }
 
     res.json(updatedProduct);
-
   } catch (err) {
     console.error("UPDATE PRODUCT ERROR:", err);
     res.status(500).json({ message: "Error updating product" });
   }
 });
-
 
 module.exports = router;
