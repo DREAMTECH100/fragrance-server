@@ -19,8 +19,11 @@ const productSchema = new mongoose.Schema(
     image: String,
     stock: Number,
 
-    // 🔥 NEW: MULTIPLE SIZES
+    // 🔥 MULTIPLE SIZES
     sizes: [sizeSchema],
+
+    // 🆕 PREORDER FLAG (NEW ADDITION ONLY)
+    isPreorder: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
