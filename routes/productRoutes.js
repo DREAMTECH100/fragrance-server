@@ -197,4 +197,21 @@ router.put("/:id", async (req, res) => {
   }
 });
 
+router.get("/search", async (req, res) => {
+  try {
+    const { q } = req.query;
+
+    if (!q) return res.json([]);
+
+    const products = await Product.find({
+      name: { $regex: q, $options: "i" },
+    });
+
+    res.json(products);
+  } catch (err) {
+    console.error("SEARCH ERROR:", err);
+    res.status(500).json({ message: "Search failed" });
+  }
+});
+
 module.exports = router;
