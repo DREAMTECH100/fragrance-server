@@ -1,0 +1,31 @@
+[33m28bf6a6[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m fix: stop tracking env file and secure repo
+[33m6b2a3c6[m Fix: remove env from repo and add product update route
+[33m96149e0[m[33m ([m[1;31morigin/main[m[33m)[m feat: switch email service from Gmail SMTP to Resend
+[33m242092e[m fix: force IPv4 for Gmail SMTP (stabilize OTP delivery)
+[33m6b6a184[m emailservice.js updated
+[33m3ca8471[m Fix: replace nodemailer SMTP with Resend (Render-compatible OTP delivery)
+[33mbb9a82c[m Fix: PaymentController handles all Paystack states (paid, pending, failed)
+[33mff773d1[m updated paymentRoutes
+[33m826199c[m fix: corrected PaymentControllers import casing for Linux deploy
+[33mae2fed0[m fix: updated verifyPayment workflow to handle paid/pending/failed statuses properly
+[33m2328e44[m Fix Paystack workflow: update verifyPayment, order model status default
+[33m0d3a4fc[m Update order.js: initialize payment pending, webhook verification, prevent double updates
+[33ma37ca05[m fix: use environment variables for Cloudinary upload
+[33m27179fb[m Integrated Cloudinary for product images
+[33mb4be3fc[m productRoute file updated
+[33mbc37ead[m Fix Cloudinary upload route
+[33mf04893e[m Fix Cloudinary upload route with timestamp
+[33m4b7142f[m productRoutes filee updated
+[33mc2ab46b[m productroutes updated
+[33m55116ae[m productroutes updated
+[33mff55f9b[m server.js file and productRoutes.js updated
+[33m5b551bd[m Fix Cloudinary upload & store URL correctly
+[33mea1e1a8[m Add /test-env route in server.js for Cloudinary env test
+[33mb462a6e[m Fix test-env route using router instead of app
+[33m7d1acef[m Add temporary cloudinary env test route
+[33m7290cfd[m Add temporary env test route
+[33m27ada42[m Add console logs for Cloudinary config debugging
+[33me601b4a[m Add console logs for Cloudinary config and upload debugging
+[33m7592f87[m Update emailService to use Gmail SMTP
+[33m1573a12[m Update payment controller callback URL
+[33md389238[m backend initial
