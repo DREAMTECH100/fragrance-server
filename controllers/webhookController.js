@@ -32,7 +32,8 @@ exports.paystackWebhook = async (req, res) => {
         return res.sendStatus(200);
       }
 
-      order.status = "paid";
+      order.paymentStatus = "paid";
+order.status = "success"; // optional but good for UI
       await order.save();
 
       console.log("✅ Payment verified via webhook:", reference);

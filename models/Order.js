@@ -34,6 +34,13 @@ const OrderSchema = new mongoose.Schema({
     default: "pending"
   },
 
+  // ✅ ADD THIS
+  paymentStatus: {
+    type: String,
+    default: "pending",
+    enum: ["pending", "paid", "failed"]
+  },
+
   createdAt: {
     type: Date,
     default: Date.now
