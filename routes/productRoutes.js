@@ -88,6 +88,10 @@ router.post("/upload", upload.single("image"), (req, res) => {
 /* =========================
    ADD PRODUCT
 ========================= */
+
+const normalize = (str) =>
+  str?.toLowerCase().trim().replace(/\s+/g, "-");
+
 router.post("/add", async (req, res) => {
   try {
     console.log("Incoming product:", req.body);
@@ -101,7 +105,7 @@ router.post("/add", async (req, res) => {
       image,
       stock,
       sizes = [],
-      isPreorder = false, // ✅ FIXED
+      isPreorder = false,
     } = req.body;
 
     if (!name || !price || !category || !image) {
@@ -116,13 +120,13 @@ router.post("/add", async (req, res) => {
     const product = new Product({
       name,
       price: Number(price),
-      category,
-      subCategory: subCategory.trim(),
+      category: normalize(category),
+      subCategory: subCategory ? normalize(subCategory) : "",
       description,
       image,
       stock: Number(stock) || 0,
       sizes: parsedSizes,
-      isPreorder: Boolean(isPreorder), // ✅ FIXED
+      isPreorder: Boolean(isPreorder),
     });
 
     await product.save();
