@@ -31,6 +31,13 @@ const productSchema = new mongoose.Schema(
 
     // 🆕 PREORDER FLAG (NEW ADDITION ONLY)
     isPreorder: { type: Boolean, default: false },
+
+    // 🆕 MANUAL OUT-OF-STOCK OVERRIDE
+    // Distinct from `stock` count — lets admin pause sales on an item
+    // even if units are technically left (e.g. damaged, recalled,
+    // reserved). The frontend treats a product as out of stock when
+    // EITHER this is true OR stock <= 0.
+    outOfStock: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
