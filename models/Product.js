@@ -17,7 +17,14 @@ const productSchema = new mongoose.Schema(
 
     description: String,
     image: String,
-    stock: Number,
+
+    // 🔥 STOCK COUNT
+    // This is the single source of truth for "out of stock" — the
+    // frontend treats stock <= 0 as out of stock. Defaulting to 0 (not
+    // undefined) means any product created without an explicit stock
+    // value is correctly treated as out of stock instead of silently
+    // reading as available. min: 0 blocks negative values.
+    stock: { type: Number, default: 0, min: 0 },
 
     // 🔥 MULTIPLE SIZES
     sizes: [sizeSchema],

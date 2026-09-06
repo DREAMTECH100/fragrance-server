@@ -106,7 +106,6 @@ router.post("/add", async (req, res) => {
       stock,
       sizes = [],
       isPreorder = false,
-      outOfStock = false,
     } = req.body;
 
     if (!name || !price || !category || !image) {
@@ -118,11 +117,6 @@ router.post("/add", async (req, res) => {
       price: Number(s.price),
     }));
 
-    const parsedStock = Number(stock) || 0;
-    // Auto-flip out of stock when stock is 0, same as the admin form —
-    // an explicit outOfStock:true from the client is still respected.
-    const resolvedOutOfStock = Boolean(outOfStock) || parsedStock === 0;
-
     const product = new Product({
       name,
       price: Number(price),
@@ -130,10 +124,9 @@ router.post("/add", async (req, res) => {
       subCategory: subCategory ? normalize(subCategory) : "",
       description,
       image,
-      stock: parsedStock,
+      stock: Number(stock) || 0,
       sizes: parsedSizes,
       isPreorder: Boolean(isPreorder),
-      outOfStock: resolvedOutOfStock,
     });
 
     await product.save();
@@ -192,20 +185,12 @@ router.put("/:id", async (req, res) => {
       stock,
       sizes = [],
       isPreorder = false, // ✅ FIXED
-      outOfStock, // no default — lets us tell "not sent" apart from "sent as false"
     } = req.body;
 
     const parsedSizes = sizes.map((s) => ({
       label: s.label,
       price: Number(s.price),
     }));
-
-    const parsedStock = Number(stock) || 0;
-
-    // If outOfStock wasn't explicitly sent, derive it from stock (auto-flip
-    // when stock hits 0). If it WAS explicitly sent, that manual choice wins.
-    const resolvedOutOfStock =
-      outOfStock !== undefined ? Boolean(outOfStock) : parsedStock === 0;
 
     const updatedProduct = await Product.findByIdAndUpdate(
       req.params.id,
@@ -216,10 +201,9 @@ router.put("/:id", async (req, res) => {
         subCategory: subCategory.trim(),
         description,
         image,
-        stock: parsedStock,
+        stock: Number(stock) || 0,
         sizes: parsedSizes,
         isPreorder: Boolean(isPreorder), // ✅ FIXED
-        outOfStock: resolvedOutOfStock,
       },
       { new: true }
     );
