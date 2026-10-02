@@ -1,42 +1,5 @@
 const axios = require("axios");
-const mongoose = require("mongoose");
 const Order = require("../models/Order");
-const Product = require("../models/Product");
-const { getPromo } = require("../utils/promo");
-
-// Work out the real unit price for a cart item from the database.
-// Conservative on purpose: if we can't positively match the product/size,
-// we fall back to the price the cart sent, so checkout never breaks.
-async function resolveUnitPrice(item) {
-  const clientPrice = Number(item.price) || 0;
-  const productId = item._id || item.id || item.productId;
-
-  if (!productId || !mongoose.Types.ObjectId.isValid(productId)) {
-    console.warn("PRICE CHECK: no valid product id on item, using cart price:", item.name);
-    return clientPrice;
-  }
-
-  try {
-    const product = await Product.findById(productId).select("price sizes");
-    if (!product) return clientPrice;
-
-    const sizeLabel = item.size || item.selectedSize?.label;
-    const hasSizes = Array.isArray(product.sizes) && product.sizes.length > 0;
-
-    if (hasSizes && sizeLabel) {
-      const match = product.sizes.find((s) => s.label === sizeLabel);
-      if (match && Number(match.price) > 0) return Number(match.price);
-      return clientPrice; // sizes exist but no match: don't guess
-    }
-
-    if (!hasSizes && Number(product.price) > 0) return Number(product.price);
-
-    return clientPrice;
-  } catch (err) {
-    console.warn("PRICE CHECK failed, using cart price:", err.message);
-    return clientPrice;
-  }
-}
 
 // ================= INIT PAYMENT =================
 exports.initializePayment = async (req, res) => {
@@ -48,40 +11,13 @@ exports.initializePayment = async (req, res) => {
       address,
       state,
       items,
+      subtotal,
       shippingFee,
-      totalAmount: clientTotal // only used for a mismatch warning, never charged
+      totalAmount
     } = req.body;
 
-    if (!email || !Array.isArray(items) || items.length === 0) {
+    if (!email || !totalAmount) {
       return res.status(400).json({ message: "Missing required fields" });
-    }
-
-    // ---- Server-side pricing (the browser's totals are not trusted) ----
-    let subtotal = 0;
-    for (const item of items) {
-      const qty = Math.max(1, Math.floor(Number(item.quantity) || 1));
-      const unitPrice = await resolveUnitPrice(item);
-      subtotal += unitPrice * qty;
-    }
-
-    // Shipping rules still live in the frontend, so we keep using its value,
-    // but never allow a negative or invalid number.
-    const shipping = Number(shippingFee);
-    const safeShipping = Number.isFinite(shipping) && shipping >= 0 ? shipping : 0;
-
-    // Promo (5% below ₦1M, 7.5% at/above ₦1M, Oct 1-10 2026, Lagos time)
-    const { rate: discountRate, discount: discountAmount } = getPromo(subtotal);
-
-    const totalAmount = subtotal - discountAmount + safeShipping;
-
-    if (!(totalAmount > 0)) {
-      return res.status(400).json({ message: "Invalid order total" });
-    }
-
-    if (clientTotal !== undefined && Math.abs(Number(clientTotal) - totalAmount) > 1) {
-      console.warn(
-        `TOTAL MISMATCH: browser sent ${clientTotal}, server calculated ${totalAmount} (${email})`
-      );
     }
 
     const reference = `ref_${Date.now()}`;
@@ -95,9 +31,7 @@ exports.initializePayment = async (req, res) => {
       state,
       items,
       subtotal,
-      shippingFee: safeShipping,
-      discountRate,
-      discountAmount,
+      shippingFee,
       totalAmount,
       paymentRef: reference,
       status: "pending"
@@ -112,7 +46,7 @@ exports.initializePayment = async (req, res) => {
       "https://api.paystack.co/transaction/initialize",
       {
         email,
-        amount: Math.round(totalAmount * 100), // Paystack expects kobo
+        amount: totalAmount * 100, // Paystack expects kobo
         reference,
         callback_url: callbackUrl
       },
