@@ -20,11 +20,6 @@ const OrderSchema = new mongoose.Schema({
 
   subtotal: Number,
   shippingFee: Number,
-
-  // Promo discount (Oct 1-10, 2026). Defaults keep old orders valid.
-  discountRate: { type: Number, default: 0 },
-  discountAmount: { type: Number, default: 0 },
-
   totalAmount: Number,
 
   deliveryZone: {
@@ -39,6 +34,7 @@ const OrderSchema = new mongoose.Schema({
     default: "pending"
   },
 
+  // ✅ ADD THIS
   paymentStatus: {
     type: String,
     default: "pending",
