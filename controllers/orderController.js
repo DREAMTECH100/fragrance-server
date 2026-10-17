@@ -14,8 +14,6 @@ exports.createOrder = async (req, res) => {
 
       subtotal,
       shippingFee,
-      discountRate,
-      discountAmount,
       totalAmount,
 
       deliveryZone,
@@ -34,8 +32,6 @@ exports.createOrder = async (req, res) => {
 
       subtotal,
       shippingFee,
-      discountRate,   // undefined falls back to schema default (0)
-      discountAmount, // undefined falls back to schema default (0)
       totalAmount,
 
       deliveryZone,
