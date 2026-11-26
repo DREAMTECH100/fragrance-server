@@ -11,7 +11,9 @@ const OrderSchema = new mongoose.Schema({
   items: [
     {
       name: String,
-      price: Number,
+      price: Number,           // amount actually charged per unit
+      originalPrice: Number,   // SALE: price before discount
+      discountPercent: Number, // SALE
       quantity: Number,
       size: String,
       category: String
@@ -19,6 +21,9 @@ const OrderSchema = new mongoose.Schema({
   ],
 
   subtotal: Number,
+  originalSubtotal: Number, // SALE
+  discountAmount: Number,   // SALE
+  discountPercent: Number,  // SALE
   shippingFee: Number,
   totalAmount: Number,
 

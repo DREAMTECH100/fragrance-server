@@ -1,5 +1,7 @@
 const axios = require("axios");
 const Order = require("../models/Order");
+// ===== CHRISTMAS SALE 2026 (remove this line in January if you delete the sale) =====
+const { SALE_PERCENT, isSaleOn, getPricing } = require("../utils/sale");
 
 // ================= INIT PAYMENT =================
 exports.initializePayment = async (req, res) => {
@@ -16,9 +18,30 @@ exports.initializePayment = async (req, res) => {
       totalAmount
     } = req.body;
 
-    if (!email || !totalAmount) {
+    if (!email || !totalAmount || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ message: "Missing required fields" });
     }
+
+    // ===== CHRISTMAS SALE: server recomputes discounted prices =====
+    const saleItems = items.map((item) => {
+      const p = getPricing(item.price);
+      return {
+        ...item,
+        originalPrice: p.original,
+        price: p.final,
+        discountPercent: p.discounted ? p.percent : 0,
+      };
+    });
+    const originalSubtotal = saleItems.reduce(
+      (s, i) => s + i.originalPrice * Number(i.quantity || 1), 0
+    );
+    const saleSubtotal = saleItems.reduce(
+      (s, i) => s + i.price * Number(i.quantity || 1), 0
+    );
+    const discountAmount = originalSubtotal - saleSubtotal;
+    const finalShipping = Number(shippingFee) || 0;
+    const finalTotal = saleSubtotal + finalShipping;
+    // ===== END SALE =====
 
     const reference = `ref_${Date.now()}`;
 
@@ -29,10 +52,13 @@ exports.initializePayment = async (req, res) => {
       phone,
       address,
       state,
-      items,
-      subtotal,
-      shippingFee,
-      totalAmount,
+      items: saleItems,
+      subtotal: saleSubtotal,
+      originalSubtotal,
+      discountAmount,
+      discountPercent: isSaleOn() ? SALE_PERCENT : 0,
+      shippingFee: finalShipping,
+      totalAmount: finalTotal,
       paymentRef: reference,
       status: "pending"
     });
@@ -46,7 +72,7 @@ exports.initializePayment = async (req, res) => {
       "https://api.paystack.co/transaction/initialize",
       {
         email,
-        amount: totalAmount * 100, // Paystack expects kobo
+        amount: finalTotal * 100, // Paystack expects kobo
         reference,
         callback_url: callbackUrl
       },
