@@ -1,7 +1,7 @@
 const axios = require("axios");
 const Order = require("../models/Order");
 // ===== CHRISTMAS SALE 2026 (remove this line in January if you delete the sale) =====
-const { SALE_PERCENT, isSaleOn, getPricing } = require("../utils/sale");
+const { getPricing } = require("../utils/sale");
 
 // ================= INIT PAYMENT =================
 exports.initializePayment = async (req, res) => {
@@ -39,6 +39,10 @@ exports.initializePayment = async (req, res) => {
       (s, i) => s + i.price * Number(i.quantity || 1), 0
     );
     const discountAmount = originalSubtotal - saleSubtotal;
+    // Effective % across the whole order (items can have different tiers)
+    const discountPercent = originalSubtotal > 0
+      ? Math.round((discountAmount / originalSubtotal) * 1000) / 10
+      : 0;
     const finalShipping = Number(shippingFee) || 0;
     const finalTotal = saleSubtotal + finalShipping;
     // ===== END SALE =====
@@ -56,7 +60,7 @@ exports.initializePayment = async (req, res) => {
       subtotal: saleSubtotal,
       originalSubtotal,
       discountAmount,
-      discountPercent: isSaleOn() ? SALE_PERCENT : 0,
+      discountPercent,
       shippingFee: finalShipping,
       totalAmount: finalTotal,
       paymentRef: reference,
